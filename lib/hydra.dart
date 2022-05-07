@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:mirrors';
 import 'package:redis/redis.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shelf_router/shelf_router.dart';
 
 /// HydraPresence is used for JSON conversion
 ///
@@ -157,6 +159,8 @@ class Hydra {
   late String ip;
   late int port;
   late String version = '0.0.1';
+
+  late Router routerInstance;
   List<String> hydraRoutes = [];
 
   /// init is used to initialize the Hydra module
@@ -265,19 +269,40 @@ class Hydra {
     });
   }
 
+  /// bindRouter
+  ///
+  bindRouter(Router router) {
+    routerInstance = router;
+  }
+
   /// addRoute
   ///
-  addRoute(String path, String method) {
-    hydraRoutes.insert(0, '[$method]$path');
+  addRoute(String path, String method, Function handler) {
+    // https://stackoverflow.com/questions/13293345/dynamic-class-method-invocation-in-dart
+    // var im = reflect(router);
+    // im.invoke(method, [handler]);
+
+    // TODO: Replace below with the use of dart annotations and reflection
+    // https://www.youtube.com/watch?v=_2yjPLVEGs4
+    switch (method) {
+      case 'get':
+        routerInstance.get(path, handler);
+        return;
+      case 'post':
+        routerInstance.post(path, handler);
+        break;
+    }
+    var transformedPath = path.replaceAll('<', ':').replaceAll('>', '');
+    hydraRoutes.insert(0, '[$method]$transformedPath');
   }
 
   /// registerRoutes
   ///
   registerRoutes() async {
     await flushRoutes();
-    addRoute('/$serviceName', 'get');
-    addRoute('/$serviceName/', 'get');
-    addRoute('/$serviceName/:rest', 'get');
+    addRoute('/$serviceName', 'get', () => {});
+    addRoute('/$serviceName/', 'get', () => {});
+    addRoute('/$serviceName/:rest', 'get', () => {});
 
     UMF umf = UMF('hydra-router:/refresh', '$serviceName:/', '''
       {

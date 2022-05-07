@@ -1,41 +1,41 @@
 # HydraDart
-Hydra for Dartlang - A light-weight library for building distributed applications such as microservices.
+Hydra for [Dartlang](https://dart.dev) - A light-weight library for building distributed applications such as microservices.
 
 ![](HydraDart.png)
 
 ## Example
 
-In this example HydraDart uses Dart Shelf to allow a Dart service to be discoverable within a Docker Swarm or Kubernetes cluster.
+In this example HydraDart uses [Dart Shelf](https://pub.dev/packages/shelf) and [Dart Self Router](https://pub.dev/packages/shelf_router) to allow a Dart service to be discoverable within a Docker Swarm or Kubernetes cluster.
 
 ```dart
 import 'dart:io';
 import 'dart:convert';
-import 'package:shelf/shelf.dart';
-import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart';
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart' as io;
 import './hydra.dart';
 
-// Configure routes.
-final _router = Router()
-  ..get('/v1/dart', _rootHandler)
-  ..get('/v1/dart/echo/<message>', _echoHandler);
+class API {
+  helloHandler(Request request) {
+    return Response.ok('hello-world');
+  }
 
-Response _rootHandler(Request req) {
-  return Response.ok('Hello, World!\n');
-}
-
-Response _echoHandler(Request request) {
-  final message = params(request, 'message');
-  return Response.ok('$message\n');
+  userHandler(Request request, String user) {
+    return Response.ok('hello $user');
+  }
 }
 
 void main(List<String> args) async {
   var hydra = Hydra();
-  hydra.addRoute('/v1/dart', 'get');
-  hydra.addRoute('/v1/dart/echo/:message', 'get');
+  var router = Router();
+  var api = API();
+
+  hydra.bindRouter(router);
+  hydra.addRoute('/v1/dart', 'get', api.helloHandler);
+  hydra.addRoute('/v1/dart/user/<user>', 'get', api.userHandler);
 
   // Load configuration file
-  File configFile = File('./configs/dart-svcs-config.json'); // (1)
+  File configFile = File('./configs/dart-svcs-config.json');
   Future<String> futureContent = configFile.readAsString();
   futureContent.then((config) async {
     Map<String, dynamic> configMap = jsonDecode(config);
@@ -44,13 +44,13 @@ void main(List<String> args) async {
     final ip = InternetAddress.anyIPv4;
 
     // Configure a pipeline that logs requests.
-    final _handler =
-        Pipeline().addMiddleware(logRequests()).addHandler(_router);
+    final routerHandler =
+        Pipeline().addMiddleware(logRequests()).addHandler(router);
 
     // For running in containers, we respect the PORT environment variable.
     final port = configMap['hydra']['servicePort'];
 
-    final server = await serve(_handler, ip, port);
+    final server = await io.serve(routerHandler, ip, port);
     print('Server listening on port ${server.port}');
 
     hydra.init(configMap);

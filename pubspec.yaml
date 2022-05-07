@@ -8,4 +8,4 @@ environment:
 dependencies:
   redis: any
   uuid: 3.0.6
-
+  shelf_router: ^1.0.0
