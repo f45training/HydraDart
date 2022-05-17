@@ -1,6 +1,6 @@
 name: hydra_dart
 description: A light-weight library for building distributed applications such as microservices.
-version: 0.0.1
+version: 0.0.2
 repository: https://github.com/pnxtech/HydraDart
 documentation: https://github.com/pnxtech/HydraDart/README.md
 environment:
