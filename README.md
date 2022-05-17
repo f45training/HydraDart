@@ -3,6 +3,13 @@ Hydra for [Dartlang](https://dart.dev) - A light-weight library for building dis
 
 ![](HydraDart.png)
 
+## Prior work
+Hydra for Dart is based on the Hydra approach to building microservices.
+
+See related repos at: https://github.com/pnxtech
+
+This implementation for Dart is especially based on HydraPy for Python.
+
 ## Example
 
 In this example HydraDart uses [Dart Shelf](https://pub.dev/packages/shelf) and [Dart Self Router](https://pub.dev/packages/shelf_router) to allow a Dart service to be discoverable within a Docker Swarm or Kubernetes cluster.
