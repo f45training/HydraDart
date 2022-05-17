@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:mirrors';
 import 'package:redis/redis.dart';
 import 'package:uuid/uuid.dart';
 import 'package:shelf_router/shelf_router.dart';
@@ -278,12 +277,6 @@ class Hydra {
   /// addRoute
   ///
   addRoute(String path, String method, Function handler) {
-    // https://stackoverflow.com/questions/13293345/dynamic-class-method-invocation-in-dart
-    // var im = reflect(router);
-    // im.invoke(method, [handler]);
-
-    // TODO: Replace below with the use of dart annotations and reflection
-    // https://www.youtube.com/watch?v=_2yjPLVEGs4
     switch (method) {
       case 'get':
         routerInstance.get(path, handler);
