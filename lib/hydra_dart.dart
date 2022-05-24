@@ -195,34 +195,32 @@ class Hydra {
 
   /// heartBeat
   ///
-  heartBeat(timer) {
+  heartBeat(timer) async {
     healthTick++;
     if (healthTick == heatlhUpdateInterval) {
       healthTick = 0;
-      redisCommand.send_object(['SELECT', redisDB]).then((var response) {
-        if (response == 'OK') {
-          redisCommand.send_object([
-            'SETEX',
-            '$redisPreKey:$serviceName:$serverInstanceID:health',
-            keyExperationTTL,
-            health()
-          ]);
-        }
-      });
+      var response = await redisCommand.send_object(['SELECT', redisDB]);
+      if (response == 'OK') {
+        await redisCommand.send_object([
+          'SETEX',
+          '$redisPreKey:$serviceName:$serverInstanceID:health',
+          keyExperationTTL,
+          health()
+        ]);
+      }
     }
 
-    redisCommand.send_object(['SELECT', redisDB]).then((var response) {
-      if (response == 'OK') {
-        redisCommand.send_object([
-          'SETEX',
-          '$redisPreKey:$serviceName:$serverInstanceID:presence',
-          keyExperationTTL,
-          serverInstanceID
-        ]);
-        redisCommand.send_object(
-            ['HSET', '$redisPreKey:nodes', serverInstanceID, presence()]);
-      }
-    });
+    var response = await redisCommand.send_object(['SELECT', redisDB]);
+    if (response == 'OK') {
+      await redisCommand.send_object([
+        'SETEX',
+        '$redisPreKey:$serviceName:$serverInstanceID:presence',
+        keyExperationTTL,
+        serverInstanceID
+      ]);
+      await redisCommand.send_object(
+          ['HSET', '$redisPreKey:nodes', serverInstanceID, presence()]);
+    }
   }
 
   /// presence
@@ -260,12 +258,11 @@ class Hydra {
   /// flushRoutes
   ///
   flushRoutes() async {
-    await redisCommand.send_object(['SELECT', redisDB]).then((var response) {
-      if (response == 'OK') {
-        redisCommand.send_object(
-            ['DEL', '$redisPreKey:$serviceName:$serverInstanceID:routes']);
-      }
-    });
+    var response = await redisCommand.send_object(['SELECT', redisDB]);
+    if (response == 'OK') {
+      await redisCommand.send_object(
+          ['DEL', '$redisPreKey:$serviceName:$serverInstanceID:routes']);
+    }
   }
 
   /// bindRouter
@@ -280,7 +277,7 @@ class Hydra {
     switch (method) {
       case 'get':
         routerInstance.get(path, handler);
-        return;
+        break;
       case 'post':
         routerInstance.post(path, handler);
         break;
@@ -304,15 +301,14 @@ class Hydra {
       }
     ''');
 
-    await redisCommand.send_object(['SELECT', redisDB]).then((var response) {
-      if (response == 'OK') {
-        for (final route in hydraRoutes) {
-          redisCommand.send_object(
-              ['SADD', '$redisPreKey:$serviceName:service:routes', route]);
-        }
-        redisCommand.send_object(
-            ['PUBLISH', '$mcMessageKey:hydra-router', umf.toJsonString()]);
+    var response = await redisCommand.send_object(['SELECT', redisDB]);
+    if (response == 'OK') {
+      for (final route in hydraRoutes) {
+        await redisCommand.send_object(
+            ['SADD', '$redisPreKey:$serviceName:service:routes', route]);
       }
-    });
+      await redisCommand.send_object(
+          ['PUBLISH', '$mcMessageKey:hydra-router', umf.toJsonString()]);
+    }
   }
 }
